@@ -84,7 +84,7 @@ export default function Home() {
   // 初始化关键词处理
   const handleInitialize = () => {
     if (!keywords.trim()) {
-      setError('请输入关键词')
+      setError('Please enter keywords')
       return
     }
 
@@ -99,7 +99,7 @@ export default function Home() {
       .filter(keyword => keyword.length > 0)
 
     if (keywordList.length === 0) {
-      setError('请输入有效的关键词')
+      setError('Please enter valid keywords')
       return
     }
 
@@ -108,7 +108,7 @@ export default function Home() {
     setProcessedKeywords(processed)
 
     if (processed.length === 0) {
-      setError('经过去重和过滤后，没有有效的关键词')
+      setError('No valid keywords after deduplication and filtering')
       return
     }
 
@@ -118,13 +118,13 @@ export default function Home() {
     setCurrentBatchIndex(0)
     setIsInitialized(true)
 
-    setProgress(`已处理 ${keywordList.length} 个关键词，去重和过滤后剩余 ${processed.length} 个，分为 ${batches.length} 批处理。`)
+    setProgress(`Processed ${keywordList.length} keywords, ${processed.length} valid keywords remaining after deduplication and filtering, divided into ${batches.length} batches.`)
   }
 
   // 处理当前批次
   const handleProcessCurrentBatch = async () => {
     if (currentBatchIndex >= keywordBatches.length) {
-      setProgress('所有批次已处理完成！')
+      setProgress('All batches completed!')
       return
     }
 
@@ -133,21 +133,21 @@ export default function Home() {
 
     try {
       const currentBatch = keywordBatches[currentBatchIndex]
-      setProgress(`正在分析第 ${currentBatchIndex + 1}/${keywordBatches.length} 批关键词 (${currentBatch.length} 个)...`)
+      setProgress(`Analyzing batch ${currentBatchIndex + 1}/${keywordBatches.length} keywords (${currentBatch.length} items)...`)
       
       const result = await analyzeKeywords(currentBatch)
-      setResults(prev => [...prev, result])
+      setResults(prev => [result, ...prev]) // 新结果放在前面
       setHasResults(true) // 有结果后切换到左右布局
       
       setCurrentBatchIndex(prev => prev + 1)
       
       if (currentBatchIndex + 1 >= keywordBatches.length) {
-        setProgress(`分析完成！共处理 ${processedKeywords.length} 个关键词，分 ${keywordBatches.length} 批完成。`)
+        setProgress(`Analysis completed! Processed ${processedKeywords.length} keywords in ${keywordBatches.length} batches.`)
       } else {
-        setProgress(`第 ${currentBatchIndex + 1} 批处理完成，点击"处理下一批"继续。`)
+        setProgress(`Batch ${currentBatchIndex + 1} completed, click "Process next batch" to continue.`)
       }
     } catch (err) {
-      setError(`第 ${currentBatchIndex + 1} 批分析失败: ${err instanceof Error ? err.message : '未知错误'}`)
+      setError(`Batch ${currentBatchIndex + 1} analysis failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
@@ -169,7 +169,9 @@ export default function Home() {
   // 合并所有结果
   const combinedMarkdown = results
     .map((result, index) => {
-      const header = results.length > 1 ? `## 第 ${index + 1} 批分析结果\n\n` : ''
+      // 由于新结果在前面，需要计算正确的批次号
+      const batchNumber = results.length - index
+      const header = results.length > 1 ? `## Batch ${batchNumber} Analysis Results\n\n` : ''
       return `${header}${result.response.response}\n\n---\n\n`
     })
     .join('')
@@ -186,10 +188,10 @@ export default function Home() {
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text'
         }}>
-          关键词分析工具
+          Keyword Analysis Tool
         </h1>
         <p style={{ color: '#6b7280', fontSize: '16px', margin: 0 }}>
-          智能分析用户意图，批量处理关键词
+          Intelligent user intent analysis and batch keyword processing
         </p>
       </div>
       
@@ -199,11 +201,11 @@ export default function Home() {
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>
-                  关键词输入
+                  Keyword Input
                 </h2>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <label style={{ fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                    批次大小：
+                    Batch Size:
                   </label>
                   <input
                     type="number"
@@ -225,14 +227,14 @@ export default function Home() {
               </div>
               
               <p style={{ color: '#6b7280', marginBottom: '16px', fontSize: '14px', lineHeight: '1.5' }}>
-                请输入要分析的关键词，用逗号或换行分隔。系统会自动去重并过滤纯数字关键词。
+                Please enter keywords to analyze, separated by commas or newlines. The system will automatically deduplicate and filter out pure numeric keywords.
               </p>
               
               <textarea
                 className="textarea"
                 value={keywords}
                 onChange={(e) => setKeywords(e.target.value)}
-                placeholder="请输入关键词，例如：&#10;人工智能&#10;机器学习&#10;深度学习&#10;自然语言处理&#10;123&#10;456"
+                placeholder="Please enter keywords, for example:&#10;artificial intelligence&#10;machine learning&#10;deep learning&#10;natural language processing&#10;123&#10;456"
                 disabled={loading || isInitialized}
                 style={{ minHeight: '150px' }}
               />
@@ -253,20 +255,16 @@ export default function Home() {
                   {loading ? (
                     <span className="loading">
                       <span className="spinner"></span>
-                      处理中...
+                      Processing...
                     </span>
                   ) : (
-                    '🚀 开始分析'
+                    '🚀 Start Analysis'
                   )}
                 </button>
               </div>
             </>
           ) : (
             <>
-              <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
-                🎛️ 控制面板
-              </h2>
-              
               {/* 状态信息 */}
               <div style={{ 
                 background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
@@ -285,7 +283,7 @@ export default function Home() {
                     animation: 'pulse 2s infinite'
                   }}></div>
                   <span style={{ fontSize: '14px', fontWeight: '600', color: '#0c4a6e' }}>
-                    有效关键词：{processedKeywords.length.toLocaleString()} 个
+                    Valid Keywords: {processedKeywords.length.toLocaleString()}
                   </span>
                 </div>
                 <div style={{ 
@@ -297,7 +295,7 @@ export default function Home() {
                   fontWeight: '500',
                   display: 'inline-block'
                 }}>
-                  共 {keywordBatches.length} 批
+                  {keywordBatches.length} batches
                 </div>
               </div>
               
@@ -347,7 +345,7 @@ export default function Home() {
               
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                  批次大小：
+                  Batch Size:
                 </label>
                 <input
                   type="number"
@@ -368,13 +366,13 @@ export default function Home() {
               
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                  关键词输入：
+                  Keyword Input:
                 </label>
                 <textarea
                   className="textarea"
                   value={keywords}
                   onChange={(e) => setKeywords(e.target.value)}
-                  placeholder="请输入关键词..."
+                  placeholder="Please enter keywords..."
                   disabled={true}
                   style={{ minHeight: '120px', fontSize: '12px' }}
                 />
@@ -396,12 +394,12 @@ export default function Home() {
                   {loading ? (
                     <span className="loading">
                       <span className="spinner"></span>
-                      分析中...
+                      Analyzing...
                     </span>
                   ) : currentBatchIndex >= keywordBatches.length ? (
-                    '✅ 全部完成'
+                    '✅ All Complete'
                   ) : (
-                    `📊 处理第 ${currentBatchIndex + 1} 批`
+                    `📊 Process Batch ${currentBatchIndex + 1}`
                   )}
                 </button>
                 <button
@@ -417,7 +415,7 @@ export default function Home() {
                     boxShadow: '0 2px 8px rgba(107, 114, 128, 0.3)'
                   }}
                 >
-                  🔄 重新开始
+                  🔄 Restart
                 </button>
               </div>
             </>
@@ -450,7 +448,7 @@ export default function Home() {
                     animation: 'pulse 2s infinite'
                   }}></div>
                   <span style={{ fontSize: '14px', fontWeight: '600', color: '#0c4a6e' }}>
-                    有效关键词：{processedKeywords.length.toLocaleString()} 个
+                    Valid Keywords: {processedKeywords.length.toLocaleString()}
                   </span>
                 </div>
                 <div style={{ 
@@ -462,7 +460,7 @@ export default function Home() {
                   fontWeight: '500',
                   display: 'inline-block'
                 }}>
-                  共 {keywordBatches.length} 批
+                  {keywordBatches.length} batches
                 </div>
               </div>
               
@@ -512,7 +510,7 @@ export default function Home() {
               
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                  批次大小：
+                  Batch Size:
                 </label>
                 <input
                   type="number"
@@ -533,13 +531,13 @@ export default function Home() {
               
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#374151' }}>
-                  关键词输入：
+                  Keyword Input:
                 </label>
                 <textarea
                   className="textarea"
                   value={keywords}
                   onChange={(e) => setKeywords(e.target.value)}
-                  placeholder="请输入关键词..."
+                  placeholder="Please enter keywords..."
                   disabled={true}
                   style={{ minHeight: '120px', fontSize: '12px' }}
                 />
@@ -561,12 +559,12 @@ export default function Home() {
                   {loading ? (
                     <span className="loading">
                       <span className="spinner"></span>
-                      分析中...
+                      Analyzing...
                     </span>
                   ) : currentBatchIndex >= keywordBatches.length ? (
-                    '✅ 全部完成'
+                    '✅ All Complete'
                   ) : (
-                    `📊 处理第 ${currentBatchIndex + 1} 批`
+                    `📊 Process Batch ${currentBatchIndex + 1}`
                   )}
                 </button>
                 <button
@@ -582,7 +580,7 @@ export default function Home() {
                     boxShadow: '0 2px 8px rgba(107, 114, 128, 0.3)'
                   }}
                 >
-                  🔄 重新开始
+                  🔄 Restart
                 </button>
               </div>
             </div>
@@ -590,7 +588,7 @@ export default function Home() {
           
           {/* 右侧结果区域 - 3/4 宽度 */}
           <div style={{ flex: '3', minWidth: '600px' }}>
-            {/* 分析结果 */}
+            {/* Analysis Results */}
             {results.length > 0 && (
               <div className="result-section" style={{ 
                 background: 'white',
@@ -616,7 +614,7 @@ export default function Home() {
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text'
                   }}>
-                    📊 分析结果
+                    📊 Analysis Results
                   </h2>
                   <div style={{ 
                     background: '#f0f9ff',
@@ -626,7 +624,7 @@ export default function Home() {
                     fontSize: '12px',
                     fontWeight: '600'
                   }}>
-                    已处理 {results.length} 批
+                    Processed {results.length} batches
                   </div>
                 </div>
                 <div className="markdown-content" style={{

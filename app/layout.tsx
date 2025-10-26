@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: '关键词分析工具',
-  description: '分析用户意图的关键词工具',
+  title: 'Keyword Analysis Tool',
+  description: 'Intelligent user intent analysis and batch keyword processing tool',
 }
 
 export default function RootLayout({
